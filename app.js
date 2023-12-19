@@ -2,29 +2,35 @@ const express = require('express');
 const app = express();
 const port = 3000;
 const cors = require('cors');
-
+const performance = require('performance-now'); // Importe o módulo performance-now
 const tests = require('./testes/testes')
+
 
 app.use(cors());
 app.use(express.json());
 
 app.post('/teste', async (req, res) => {
+    const start = performance(); 
 
     const stringParam = req.body.stringParam;
+    console.log(stringParam);
     const results = await tests.executarTestes(stringParam);
+
     let isCorreto = true;
 
-    for (const result of results) {
-        if (result.approved === false) {
-            isCorreto = false;
-            break;
-        }
+    if (results.failed > 0) {
+        isCorreto = false
     }
 
-    if(isCorreto){
-        res.status(200).json({ results: results, isCorreto: true });
-    }else{
-        res.status(200).json({ results: results, isCorreto: "se fodeu" });
+    
+    const end = performance();
+    const executionTime = end - start; 
+    const executionTimeInt = `${Math.floor(executionTime)}ms`
+
+    if (isCorreto) {
+        res.status(200).json({ results: results.resultados, isCorreto: true, totalExecutionTime: executionTimeInt, failed: results.failed, passed: results.passed });
+    } else {
+        res.status(200).json({ results: results.resultados, isCorreto: false, totalExecutionTime: executionTimeInt, failed: results.failed, passed: results.passed });
     }
 
 });
